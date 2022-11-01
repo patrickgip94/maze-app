@@ -1,11 +1,13 @@
 import React, { FormEvent, useState } from 'react';
 import Header from '../components/Header';
 import { useAddress, useContract } from "@thirdweb-dev/react";
+import { useRouter } from 'next/router';
 
 type Props = {}
 
 function addItem({}: Props) {
   const address = useAddress();
+  const router = useRouter();
   const [preview, setPreview] = useState<string>();
   const [image, setImage] = useState<File>();
 
@@ -41,6 +43,9 @@ function addItem({}: Props) {
       const receipt = tx.receipt; // The transaction receipt
       const tokenId = tx.id; // the Id of the NFT minted
       const nft = await tx.data(); // (this is optional) it fetches details of minted NFT
+
+      console.log(receipt, tokenId, nft);
+      router.push("/");
     } catch (error) {
       console.error(error)
     }
@@ -61,7 +66,7 @@ function addItem({}: Props) {
         <div className="flex flex-col justify-center items-center md:flex-row md:space-x-5 pt-5">
           <img 
             className="border h-80 w-80 object-contain"
-            src="https://i.imgur.com/m2rSykf.png" 
+            src={preview || "https://i.imgur.com/m2rSykf.png" }
             alt="" 
           />
 
