@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { FormEvent, useState } from 'react';
 import Header from '../components/Header';
 import { 
   useAddress, 
@@ -10,13 +10,16 @@ import {
   useCreateAuctionListing,
   useCreateDirectListing,
 } from "@thirdweb-dev/react";
-import { NFT } from '@thirdweb-dev/sdk';
+import { NFT, NATIVE_TOKENS, NATIVE_TOKEN_ADDRESS } from '@thirdweb-dev/sdk';
+import network from '../utils/network';
+import Router, { useRouter } from 'next/router';
 
 
 type Props = {}
 
 function Create ({}: Props) {
   const address = useAddress();
+  const router = useRouter();
   const { contract } = useContract(
     process.env.NEXT_PUBLIC_MARKETPLACE_CONTRACT,
     'marketplace'
@@ -29,6 +32,81 @@ function Create ({}: Props) {
   );
 
   const ownedNfts = useOwnedNFTs(collectionContract, address);
+
+  const networkMisMatch = useNetworkMismatch()
+  const [, switchNetwork] = useNetwork();
+
+  const { mutate: createDirectListing, isLoading: isLoadingDirect, error: isErrorDirect } = useCreateDirectListing(contract);
+  
+  const { mutate: createAuctionListing, isLoading: isLoadingAuction, error: isErrorAuction } = useCreateAuctionListing(contract);
+
+  // This function gets called when the form is submitted
+  // The user has provided:
+  // - contract address
+  // - token id
+  // - type of listing (either auction or direct)
+  // - price of the NFT
+  // This function gets called when the form is submitted.
+
+  const handleCreateListing = async (e: FormEvent<HTMLFormElement>) => {
+    e.preventDefault();
+
+    if (networkMisMatch) {
+      switchNetwork && switchNetwork(network);
+      return;
+    }
+
+    if (!selectedNft) return;
+
+    const target = e.target as typeof e.target & {
+      elements: { listingType: { value: string }, price: { value: string } };
+    };
+
+    const {listingType, price} = target.elements;
+
+    if (listingType.value === "directListing") {
+      createDirectListing({
+        assetContractAddress: process.env.NEXT_PUBLIC_COLLECTION!,
+        tokenId: selectedNft.metadata.id,
+        currencyContractAddress: NATIVE_TOKEN_ADDRESS,
+        listingDurationInSeconds: 60 * 60 * 24 * 7, // 1 week
+        quantity: 1,
+        buyoutPricePerToken: price.value,
+        startTimestamp: new Date()
+      }, {
+        onSuccess(data, variables, context) {
+          console.log("SUCCESS:", data, variables, context);
+          Router.push('/');
+        },
+        onError(error, variables, context) {
+          console.log("ERROR:", error, variables, context);
+        },
+      }
+      );
+    }
+
+    if (listingType.value === 'auctionListing') {
+      createAuctionListing({
+        assetContractAddress: process.env.NEXT_PUBLIC_COLLECTION!,
+        buyoutPricePerToken: price.value,
+        tokenId: selectedNft.metadata.id,
+        startTimestamp: new Date(),
+        currencyContractAddress: NATIVE_TOKEN_ADDRESS,
+        listingDurationInSeconds: 60 * 60 * 24 * 7, // 1 week
+        quantity: 1,
+        reservePricePerToken: 0,
+      }, {
+        onSuccess(data, variables, context) {
+          console.log("SUCCESS:", data, variables, context);
+          router.push("/");
+        },
+        onError(error, variables, context) {
+          console.log("ERROR: ", error, variables, context);
+        },
+      }
+      );
+    }
+  };
 
   return (
     <div>
@@ -63,10 +141,10 @@ function Create ({}: Props) {
         </div>
 
         {selectedNft && (
-          <form>
-            <div>
-              <div className="flex flex-col p-10">
-                <label>Direct Listing / Fixed Price</label>
+          <form onSubmit={handleCreateListing}>
+            <div className="flex flex-col p-10">
+              <div className="grid grid-cols-2 gap-5">
+                <label className="border-r font-light">Direct Listing / Fixed Price</label>
                 <input 
                   type="radio" 
                   name="listingType" 
@@ -74,16 +152,24 @@ function Create ({}: Props) {
                   className="ml-auto h-10 w-10" 
                 />
 
-                <label>Auction</label>
+                <label className="border-r font-light">Auction</label>
                 <input 
                   type="radio" 
                   name="listingType" 
                   value="auctionListing"
                   className="ml-auto h-10 w-10" 
                 />
-
+                
+                <label className="border-r font-light">Price</label>
+                <input 
+                  type="text"
+                  name="price" 
+                  placeholder="0.05"
+                  className="bg-gray-100 p-5"
+                />
 
               </div>
+              <button className="bg-blue-600 text-white rounded-lf p-4 mt-8">Create Listing</button>
             </div>
           </form>
         )}
