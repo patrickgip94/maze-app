@@ -1,20 +1,69 @@
 import { UserCircleIcon } from '@heroicons/react/24/solid';
-import { MediaRenderer, useContract, useListing } from '@thirdweb-dev/react';
+import { 
+  useContract, 
+  useNetwork,
+  useNetworkMismatch,
+  useMakeBid,
+  useOffers,
+  useMakeOffer,
+  useBuyNow,
+  MediaRenderer,
+  useAddress, 
+  useListing,
+} from '@thirdweb-dev/react';
 import { ListingType } from '@thirdweb-dev/sdk';
 import { useRouter } from 'next/router';
-import React from 'react';
+import React, { useEffect, useState } from 'react';
 import Header from '../../components/Header';
+import Countdown from 'react-countdown';
+import network from '../../utils/network';
+import { ethers } from 'ethers';
 
 function ListingPage() {
   const router = useRouter();
   const { listingId } = router.query as { listingId: string };
+  const [bidAmount, setBidAmount] = useState('');
+  const [, switchNetwork] = useNetwork();
+  const networkMismatch = useNetworkMismatch();
 
+  const [minmumNextBid, setMinimumNextbid] = useState<{
+    displayValue: string;
+    symbol: string;
+  }>();
+
+  
   const { contract } = useContract (
     process.env.NEXT_PUBLIC_MARKETPLACE_CONTRACT,
     'marketplace'
-  );
-  
+    );
+
+  const { data: offers } = useOffers(contract, listingId);
+  console.log(offers);
+
+  const { mutate: makeOffer } = useMakeOffer(contract);
+  const { mutate: buyNow } = useBuyNow(contract);
   const { data: listing, isLoading, error } = useListing(contract, listingId);
+
+  useEffect (() => {
+    if (!listingId || !contract || !listing) return;
+
+    if (listing.type === ListingType.Auction) {
+      fetchMinNextBid();
+    }
+  }, [listingId, listing, contract]);
+
+  console.log(minmumNextBid)
+
+  const fetchMinNextBid = async () => {
+    if (!listingId || !contract) return;
+
+    const { displayValue, symbol } = await contract.auction.getMinimumNextBid(listingId);
+
+    setMinimumNextbid({
+      displayValue: displayValue,
+      symbol: symbol,
+    });
+  };
 
   const formatPlaceHolder = () => {
     if (!listing) return;
@@ -23,11 +72,82 @@ function ListingPage() {
     }
 
     if (listing.type === ListingType.Auction) {
-      return "Enter Bid Amount"
-
-    {/* TODO: Improve Big Amount   */}
+      return Number(minmumNextBid?.displayValue) === 0
+        ? "Enter Bid Amount" 
+        : `${minmumNextBid?.displayValue} ${minmumNextBid?.symbol} or
+        more`;
     }
-  }
+  };
+
+  const buyNft = async () => {
+    if (networkMismatch) {
+      switchNetwork && switchNetwork(network);
+      return;
+    }
+
+    if (!listingId || !contract || !listing) return;
+
+    await buyNow(
+      {
+        id: listingId,
+        buyAmount: 1,
+        type: listing.type,
+      },
+      {
+        onSuccess(data, variables, context) {
+          alert("NFT bought succcessfuly!");
+          console.log('SUCCESS', data, variables, context);
+          router.replace('/')
+        },
+        onError(error, variables, context) {
+          alert("ERROR: NFT could not be bought");
+          console.log("ERROR", error, variables, context);
+        },
+      }
+    );
+  };
+
+  const createBidOrOffer = async () => {
+    try {
+      if (networkMismatch) {
+        switchNetwork && switchNetwork(network);
+        return;
+      }
+
+      // Direct Listing
+      if (listing?.type === ListingType.Direct) {
+        if (listing.buyoutPrice.toString() === ethers.utils.parseEther(bidAmount).toString()) {
+          console.log("Buyout Price met, buying NFT...");
+
+          buyNft();
+          return;
+        }
+
+        console.log("Buyout price not met, making offer...")
+        await makeOffer(
+          {
+            quantity: 1,
+            listingId,
+            pricePerToken: bidAmount,
+          }, 
+          {
+            onSuccess(data, variables, context) {
+              alert("Offer made successfully!");
+              console.log("SUCESS", data, variables, context);
+            },
+            onError(error, variables, context) {
+              alert("ERROR: Offer could not be made");
+              console.log("ERROR", error, variables, context);
+            }
+          }
+        )
+      }
+
+      // Auction Listing
+    } catch (error) {
+      console.log(error)
+    }
+  };
 
   if (isLoading) 
     return (
@@ -80,7 +200,7 @@ function ListingPage() {
               {listing.buyoutCurrencyValuePerToken.symbol}
             </p>
 
-            <button className="col-start-2 mt-2 bg-blue-600 font-bold text-white rounded-full w-44 py-4 px-10">
+            <button onClick={buyNft} className="col-start-2 mt-2 bg-blue-600 font-bold text-white rounded-full w-44 py-4 px-10">
               Buy Now!
             </button>
           </div>
@@ -101,19 +221,28 @@ function ListingPage() {
             {listing.type === ListingType.Auction && (
               <>
                 <p>Current Minimum Bid:</p>
-                <p>...</p>
+                <p className="font-bold">
+                  {minmumNextBid?.displayValue} 
+                  {minmumNextBid?.symbol}
+                </p>
 
+                {/* Using React extension called "React Countdown" */}
                 <p>Time Remaining:</p>
-                <p>...</p>
+                <Countdown 
+                  date={Number(listing.endTimeInEpochSeconds.toString()) * 1000}
+                />
               </>
             )}
 
             <input 
               className="border p-2 rounded-lg mr-5" 
-              type="text" 
+              type="text"
+              onChange={e => setBidAmount(e.target.value)}
               placeholder={formatPlaceHolder()}
             />
-            <button className="bg-red-600 font-bold text-white rounded-full w-44 py-4 px-10">
+            <button 
+              onClick={createBidOrOffer} 
+              className="bg-red-600 font-bold text-white rounded-full w-44 py-4 px-10">
               {listing.type === ListingType.Direct 
               ? "Offer" 
               : "Bid"}
