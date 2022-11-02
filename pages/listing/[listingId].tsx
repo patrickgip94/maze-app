@@ -37,6 +37,8 @@ function ListingPage() {
     'marketplace'
     );
 
+    const { mutate: makeBid } = useMakeBid(contract);
+
   const { data: offers } = useOffers(contract, listingId);
   console.log(offers);
 
@@ -74,8 +76,7 @@ function ListingPage() {
     if (listing.type === ListingType.Auction) {
       return Number(minmumNextBid?.displayValue) === 0
         ? "Enter Bid Amount" 
-        : `${minmumNextBid?.displayValue} ${minmumNextBid?.symbol} or
-        more`;
+        : `${minmumNextBid?.displayValue} ${minmumNextBid?.symbol} or more`;
     }
   };
 
@@ -134,16 +135,37 @@ function ListingPage() {
             onSuccess(data, variables, context) {
               alert("Offer made successfully!");
               console.log("SUCESS", data, variables, context);
+              setBidAmount('')
             },
             onError(error, variables, context) {
               alert("ERROR: Offer could not be made");
               console.log("ERROR", error, variables, context);
             }
           }
-        )
+        );
       }
 
       // Auction Listing
+      if (listing?.type === ListingType.Auction) {
+        console.log('Making Bid...');
+
+        await makeBid(
+          {
+            listingId,
+            bid: bidAmount,
+          }, 
+          {
+            onSuccess(data, variables, context) {
+              alert("Bid made successfully!");
+              console.log("SUCCESS", data, variables, context);
+            },
+            onError(error, variables, context) {
+              alert("ERROR: Bid could not be made");
+              console.log("ERROR", error, variables, context);
+            },
+          }
+        );
+      }
     } catch (error) {
       console.log(error)
     }
@@ -165,15 +187,15 @@ function ListingPage() {
   }
 
 
-
   return (
     <div>
       <Header />
 
-      <main className="max-w-6xl mx-auto p-2 flex-col lg:flex-row space-y-10 space-x-5 pr-10">
+      <main className="max-w-6xl mx-auto p-2 flex flex-col lg:flex-row space-y-10 space-x-5 pr-10">
         <div className="p-10 border mx-auto lg:mx-0 max-w-md lg:max-w-xl">
           <MediaRenderer src={listing.asset.image} />
         </div>
+
         {/* Item name / Item description / seller id */}
         <section className="flex-1 space-y-5 pb-20 lg:pb-0">
           <div>
@@ -220,9 +242,9 @@ function ListingPage() {
             {/* TODO: Remaining time on auction goes here */}
             {listing.type === ListingType.Auction && (
               <>
-                <p>Current Minimum Bid:</p>
-                <p className="font-bold">
-                  {minmumNextBid?.displayValue} 
+                <p>Current Minimum Bid: </p>
+                <p className="font-bold ">
+                  {minmumNextBid?.displayValue}{" "}
                   {minmumNextBid?.symbol}
                 </p>
 

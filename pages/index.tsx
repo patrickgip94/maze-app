@@ -23,7 +23,7 @@ const Home = () => {
       {/* Header */}
       <Header />
       
-      <main className="max-w-6xl mx-auto p-2">
+      <main className="max-w-6xl mx-auto p-2 px-6">
         {loadingListings ? ( 
           <p className="text-center animate-pulse text-blue-500">
             Loading listings...
@@ -32,12 +32,13 @@ const Home = () => {
           <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 
             lg:grid-cols-4 gap-5 mx-auto">
             {listings?.map((listing) => (
-              <Link href={`/listing/${listing.id}`}>
-                <div 
-                  className="flex flex-col card hover:scale-105 
-                  transition-all duration-150 ease-out" 
-                  key={listing.id}
-                >
+              <Link
+                className="flex flex-col card hover:scale-105 
+                transition-all duration-150 ease-out"
+                key={listing.id}
+                href={`/listing/${listing.id}`}
+              >
+                <div>
                   {/* Item images */}
                   <div className="flex-1 flex flex-col pb-2 items-center">
                     <MediaRenderer className="w-44" src={listing.asset.image} />
