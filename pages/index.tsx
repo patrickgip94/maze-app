@@ -6,9 +6,11 @@ import {
 } from "@thirdweb-dev/react";
 import { ListingType } from "@thirdweb-dev/sdk";
 import Link from "next/link";
+import { useRouter } from "next/router";
 import Header from "../components/Header";
 
 const Home = () => {
+  const router = useRouter();
   const { contract } = useContract(process.env.
     NEXT_PUBLIC_MARKETPLACE_CONTRACT, 
     'marketplace'
@@ -32,13 +34,12 @@ const Home = () => {
           <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 
             lg:grid-cols-4 gap-5 mx-auto">
             {listings?.map((listing) => (
-              <Link
-                className="flex flex-col card hover:scale-105 
-                transition-all duration-150 ease-out"
-                key={listing.id}
-                href={`/listing/${listing.id}`}
-              >
-                <div>
+                <div
+                  className="flex flex-col card hover:scale-105 
+                  transition-all duration-150 ease-out"
+                  onClick={() => router.push(`/listing/${listing.id}`)}
+                  key={listing.id}
+                >
                   {/* Item images */}
                   <div className="flex-1 flex flex-col pb-2 items-center">
                     <MediaRenderer className="w-44" src={listing.asset.image} />
@@ -86,7 +87,6 @@ const Home = () => {
                     </div>
                   </div>
                 </div>
-              </Link>
             ))}
           </div>
         )}

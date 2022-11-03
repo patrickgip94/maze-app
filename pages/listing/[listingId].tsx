@@ -264,10 +264,22 @@ function ListingPage() {
                     {listing.sellerAddress === address && (
                       <button 
                         onClick={() => {
-                          acceptOffer({
-                            listingId,
-                            addressOfOfferor: offer.offeror,
-                          });
+                          acceptOffer(
+                            {
+                              listingId,
+                              addressOfOfferor: offer.offeror,
+                            }, 
+                            {
+                              onSuccess(data, variables, context) {
+                                alert("Offer accepted successfully!");
+                                console.log("SUCCESS", data, variables, context);
+                              },
+                              onError(error, variables, context) {
+                                alert("ERROR: Offer could not be accepted");
+                                console.log("ERROR", error, variables, context)
+                              },
+                            }
+                          );
                         }}
                         className="p-2 w-32 bg-red-500/50 rounded-lg font-bold text-xs cursor-pointer"
                       >
