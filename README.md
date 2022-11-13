@@ -7,13 +7,12 @@ Maze App is a portfolio e-Commerce application that was inspired by eBay. Maze i
 ![enter image description here](https://i.imgur.com/rn4xwQX.png)
 ```
 1. Secure user authentication
-2. New user creation with:
+2. MetaMask authentication:
     * validations
     * password encryption
 3. Product Search by:
     * Key words
     * Category
-4. Shortcuts for faster navigation
 ```
 
 ## Link
