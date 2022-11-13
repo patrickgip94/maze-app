@@ -14,6 +14,12 @@ Maze App is a NFT portfolio e-Commerce cryptocurrency application that was inspi
     * Key words
     * Category
 ```
+## Technology 
+1. Next.js
+2. HTML / CSS
+3. tailwindCSS
+4. Thirdweb
+5. Hosted using Vercel
 
 ## Link
 [https://maze-app-three.vercel.app/](https://maze-app-three.vercel.app/)
