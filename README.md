@@ -1,5 +1,5 @@
 ## Maze App
-Maze App is a NFT portfolio e-Commerce application that was inspired by eBay. Maze implements many of the core features of eBay, which includes the ability to list an item, auction off an item and price offerings. 
+Maze App is a NFT portfolio e-Commerce cryptocurrency application that was inspired by eBay. Maze implements many of the core features of eBay, which includes the ability to list an item, auction off an item and price offerings. 
 
 
 ![enter image description here](https://i.imgur.com/lQ8f7Wo.png)
