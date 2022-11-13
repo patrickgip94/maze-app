@@ -11,6 +11,5 @@ Maze is a portfolio e-Commerce application inspired by eBay. Maze implements man
         * Category
     4. Shortcuts for faster navigation
 
-## Deploy your own
-
-## How to use
+## Link
+https://maze-app-three.vercel.app/
